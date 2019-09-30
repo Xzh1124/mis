@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div>
+        <canvas></canvas>
+        <div id="bar-wrapper"></div>
+    </div>
+    <div class='checkbox'>
+        <div id="region-radio-wrapper"></div>
+        <div id="product-radio-wrapper"></div>
+    </div>
+
+    <div id="table-wrapper">
+        <table>
+            <tbody>
+                <tr>
+                    <td>商品</td>
+                    <td>地区</td>
+                    <td>1月</td>
+                    <td>2月</td>
+                    <td>3月</td>
+                    <td>4月</td>
+                    <td>5月</td>
+                    <td>6月</td>
+                    <td>7月</td>
+                    <td>8月</td>
+                    <td>9月</td>
+                    <td>10月</td>
+                    <td>11月</td>
+                    <td>12月</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <script src="sourcedata.js"></script>
+    <script type="text/javascript" src="bar.js"></script>
+    <script src="line.js"></script>
+    <script src="app.js"></script>
+    <script src="checkbox.js"></script>
+    <script src="table.js"></script>
+    <script>
+        var region_radio_wrapper = document.querySelector('#region-radio-wrapper');
+        var product_radio_wrapper = document.querySelector('#product-radio-wrapper');
+        var dataRender = JSON.parse(localStorage.getItem('data')) || sourceData;
+        var submit = document.querySelector('.submit');
+        var bar = document.getElementById("bar-wrapper");
+        var checkbox = document.querySelector('.checkbox');
+        generateCheckbox(region_radio_wrapper, regionCheckbox);
+        generateCheckbox(product_radio_wrapper, productCheckbox);
+
+        window.onpopstate = function(e) {
+
+            upDateSelect();
+            makeArr();
+            clearTable();
+            changeTable();
+
+        };
+        window.onload = function(e) {
+
+            upDateSelect();
+            makeArr();
+            clearTable();
+            changeTable();
+
+        };
+    </script>
+</body>
+
+</html>

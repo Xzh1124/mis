@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        table,
+        tr,
+        td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        
+        td {
+            width: 100px;
+            text-align: center;
+            position: relative;
+        }
+        
+        canvas,
+        #bar-wrapper {
+            display: inline-block;
+        }
+        
+        input {
+            font-size: 17px;
+            padding: 0;
+            display: inline-block;
+            height: 21px;
+            width: 90px;
+            border: 0;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        i {
+            position: absolute;
+            left: 91px;
+            height: 20px;
+            width: 100px;
+            z-index: 2;
+        }
+        
+        .poi {
+            display: block;
+        }
+        
+        .pencil::after {
+            top: 6px;
+            position: absolute;
+            background-image: url("pencil.png");
+            content: "";
+            height: 15px;
+            width: 15px;
+            background-size: cover;
+            display: inline-block;
+            right: 2px;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <canvas></canvas>
+        <div id="bar-wrapper"></div>
+    </div>
+    <div class='checkbox'>
+        <div id="region-radio-wrapper"></div>
+        <div id="product-radio-wrapper"></div>
+    </div>
+
+    <div id="table-wrapper">
+        <table>
+            <tbody>
+                <tr>
+                    <td>商品</td>
+                    <td>地区</td>
+                    <td>1月</td>
+                    <td>2月</td>
+                    <td>3月</td>
+                    <td>4月</td>
+                    <td>5月</td>
+                    <td>6月</td>
+                    <td>7月</td>
+                    <td>8月</td>
+                    <td>9月</td>
+                    <td>10月</td>
+                    <td>11月</td>
+                    <td>12月</td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+    <button class='submit'>提交</button>
+    <script type="text/javascript" src="bar.js"></script>
+    <script src="line.js"></script>
+    <script>
+        let sourceData = [{
+            product: "手机",
+            region: "华东",
+            sale: [120, 100, 140, 160, 180, 185, 190, 210, 230, 245, 255, 270]
+        }, {
+            product: "手机",
+            region: "华北",
+            sale: [80, 70, 90, 110, 130, 145, 150, 160, 170, 185, 190, 200]
+        }, {
+            product: "手机",
+            region: "华南",
+            sale: [220, 200, 240, 250, 260, 270, 280, 295, 310, 335, 355, 380]
+        }, {
+            product: "笔记本",
+            region: "华东",
+            sale: [50, 60, 80, 110, 30, 20, 70, 30, 420, 30, 20, 20]
+        }, {
+            product: "笔记本",
+            region: "华北",
+            sale: [30, 35, 50, 70, 20, 15, 30, 50, 710, 130, 20, 20]
+        }, {
+            product: "笔记本",
+            region: "华南",
+            sale: [80, 120, 130, 140, 70, 75, 120, 90, 550, 120, 110, 100]
+        }, {
+            product: "智能音箱",
+            region: "华东",
+            sale: [10, 30, 4, 5, 6, 5, 4, 5, 6, 5, 5, 25]
+        }, {
+            product: "智能音箱",
+            region: "华北",
+            sale: [15, 50, 15, 15, 12, 11, 11, 12, 12, 14, 12, 40]
+        }, {
+            product: "智能音箱",
+            region: "华南",
+            sale: [10, 40, 10, 6, 5, 6, 8, 6, 6, 6, 7, 26]
+        }]
+
+
+        let productCheckbox = ['全选', '手机', '笔记本', '智能音箱'];
+        let regionCheckbox = ['全选', '华东', '华南', '华北'];
+        var region_select = ['华东', '华南', '华北'];
+        var product_select = ['手机', '笔记本', '智能音箱'];
+        var tableWrapper = document.querySelector('#table-wrapper');
+        var table = document.querySelector('tbody');
+        var region_radio_wrapper = document.querySelector('#region-radio-wrapper');
+        var product_radio_wrapper = document.querySelector('#product-radio-wrapper');
+        var dataRender = JSON.parse(localStorage.getItem('data')) || sourceData;
+        var submit = document.querySelector('.submit');
+        var bar = document.getElementById("bar-wrapper");
+
+        generateCheckbox(region_radio_wrapper, regionCheckbox);
+        generateCheckbox(product_radio_wrapper, productCheckbox);
+
+        window.onpopstate = function(e) {
+
+            upDateSelect();
+            makeArr();
+            clearTable();
+            changeTable();
+
+        };
+        window.onload = function(e) {
+
+            upDateSelect();
+            makeArr();
+            clearTable();
+            changeTable();
+
+        };
+
+        function upDateSelect() {
+            var url = decodeURIComponent(location.search.slice(1));
+            var tmp = url.split("&");
+            var cb = document.querySelector('.checkbox').querySelectorAll('input');
+            for (var i = 1; i < cb.length; i++) {
+                cb[i].checked = false;
+            }
+
+            for (var i = 1; i < cb.length; i++) {
+                if (i != 4) {
+                    for (var j = 1; j < tmp.length; j++) {
+                        if (tmp[j] == cb[i].value) {
+
+                            cb[i].checked = true;
+
+                        }
+                    }
+                }
+            }
+            singleSelect(region_radio_wrapper);
+            singleSelect(product_radio_wrapper);
+
+        }
+
+        function makeArr() {
+            var url = decodeURIComponent(location.search.slice(1));
+            var tmp = url.split("&");
+            region_select = [];
+            product_select = [];
+            for (var i in tmp) {
+                if (productCheckbox.indexOf(tmp[i]) != -1) {
+                    product_select.push(tmp[i]);
+                } else if (regionCheckbox.indexOf(tmp[i]) != -1) {
+                    region_select.push(tmp[i]);
+                }
+            }
+
+
+        }
+        // initTable(dataRender);
+
+        // generateLine(dataRender);
+        // bar.innerHTML = drawColum(dataRender);
+
+        function changeTable() {
+
+            var arr = getData(dataRender);
+            if (region_select.length == 1) {
+                sortArrByRegion(arr);
+                table.rows[0].cells[0].innerHTML = '地区';
+                table.rows[0].cells[1].innerHTML = '商品';
+                table1(arr);
+            } else {
+                sortArrByProduct(arr);
+                table.rows[0].cells[0].innerHTML = '商品';
+                table.rows[0].cells[1].innerHTML = '地区';
+                table2(arr);
+            }
+
+
+            marge();
+
+        }
+
+        function getData(sourceData) {
+            var data = [];
+            for (let i in sourceData) {
+                if (product_select.indexOf(sourceData[i].product) != -1 && region_select.indexOf(sourceData[i].region) != -1) {
+                    data.push({
+                        index: i,
+                        value: sourceData[i]
+                    });
+                }
+            }
+            if (data.length == 0) {
+                for (let i in sourceData) {
+                    if (product_select.indexOf(sourceData[i].product) != -1) {
+                        data.push({
+                            index: i,
+                            value: sourceData[i]
+                        });
+                    } else if (region_select.indexOf(sourceData[i].region) != -1) {
+                        data.push({
+                            index: i,
+                            value: sourceData[i]
+                        });
+                    }
+                }
+            }
+            return data;
+        }
+
+
+        table.addEventListener('mouseleave', function() {
+            generateLine(123);
+            bar.innerHTML = drawColum(123);
+        })
+
+        table.addEventListener('mouseover', function(e) {
+            var qwe = getData(dataRender);
+            var arr = [];
+            for (var i in qwe) {
+                arr.push(qwe[i].value);
+            }
+            if (/^[0-9]+$/.test(e.target.innerHTML)) {
+                e.target.classList.add('pencil');
+                generateLine(arr[e.target.parentNode.index].sale);
+                bar.innerHTML = drawColum(arr[e.target.parentNode.index].sale);
+
+            }
+        })
+        table.addEventListener('mouseout', function(e) {
+            e.target.classList.remove('pencil')
+
+
+        })
+        document.addEventListener('keyup', function(e) {
+            if (e.keyCode == 13) {
+                queren.onclick();
+            } else if (e.keyCode == 27) {
+                cancel.onclick();
+            }
+        })
+        document.onclick = function(e) {
+            if (e.target === submit) {
+                // var tableDate = saveData();
+                // initTable(tableDate);
+            } else if (cancel.onclick) {
+                cancel.onclick();
+            }
+        }
+
+        function upDateData(target) {
+
+
+
+            dataRender[target.x].sale[target.y] = parseInt(target.innerHTML);
+            localStorage.setItem("data", JSON.stringify(dataRender))
+
+
+        }
+
+        function CheckHash2(target) {
+            // var positionX = target.x;
+            // var positionY = target.y;
+            // var sum = target.innerHTML;
+            let str = decodeURIComponent(location.search.slice(1));
+
+
+            if (str.indexOf('&positionX') == -1) {
+
+                str += '&' + 'positionX=' + target.x + '&' + 'positionY=' + target.y +
+                    '&' + 'sum=' + dataRender[target.x].sale[target.y];
+                history.pushState(null, null, '?' + str);
+            }
+            str = str.split('&positionX')[0];
+
+
+            str += '&' + 'positionX=' + target.x + '&' + 'positionY=' + target.y +
+                '&' + 'sum=' + target.innerHTML;
+            history.pushState(null, null, '?' + str);
+
+        }
+        tableWrapper.addEventListener('click', function(e) {
+            e.stopPropagation();
+
+
+            if (/^[0-9]+$/.test(e.target.innerHTML)) {
+                if (cancel.onclick) {
+                    cancel.onclick();
+                }
+                tmp = e.target.innerHTML;
+                var input = document.createElement('input');
+                input.value = tmp;
+
+                var i = document.createElement('i');
+                cancel = document.createElement('button');
+                cancel.innerHTML = '取消';
+                queren = document.createElement('button');
+                queren.onclick = function() {
+                    if (/^[0-9]+$/.test(input.value)) {
+                        if (input.value != tmp) {
+                            tmp = input.value;
+                            e.target.innerHTML = input.value;
+
+                            // CheckHash2(e.target);
+                            upDateData(e.target);
+                        }
+                    } else {
+                        cancel.onclick();
+                        alert('请输入一个数字');
+                    }
+                }
+                cancel.onclick = function() {
+                    e.target.innerHTML = tmp;
+
+                }
+                queren.innerHTML = '确定';
+                i.appendChild(cancel);
+                i.appendChild(queren);
+                e.target.innerHTML = '';
+                e.target.appendChild(input);
+                e.target.appendChild(i);
+                input.focus();
+                // e.target.innerHTML = '<input type="text"><i><button>取消</button><button>确定</button></i>';
+                // ipt = e.target.querySelector('input');
+                // ipt.value = tmp;
+                // ipt = e.target.querySelector('input');
+                // btn = e.target.querySelectorAll('button');
+                // ipt.focus();
+                // btn[0].onclick = function() {
+                //     console.log(e.target.innerHTML);
+                //     e.target.innerHTML = tmp;
+
+
+                // }
+                // btn[1].onclick = function(a) {
+
+
+                //         a.stopPropagation();
+                //         if (/^[0-9]+$/.test(ipt.value))
+                //             e.target.innerHTML = ipt.value;
+                //         else {
+                //             alert('请输入一个数字');
+                //  btn[0].onclick();
+                //             console.log(3);
+                //         }
+
+                //     }
+
+            } else if (cancel.onclick && e.target.innerHTML != '') {
+                cancel.onclick();
+
+            }
+
+        })
+
+        function cancel() {
+
+        }
+        //     // btn.onclick = function() {
+        //     //     saveData();
+        //     // }
+
+        function saveData() {
+
+            var data = [];
+            var tr = document.querySelectorAll('tr');
+            for (var i = 1; i < tr.length; i++) {
+                var td = tr[i].querySelectorAll('td');
+                var single = {};
+                var tmp = [];
+                for (var j = 0; j < td.length; j++) {
+                    if (j == 0) {
+                        single.product = td[j].innerHTML;
+                    } else if (j == 1) {
+                        single.region = td[j].innerHTML;
+                    } else {
+                        tmp.push(td[j].innerHTML);
+                    }
+                }
+                single.sale = tmp;
+                data.push(single);
+            }
+            localStorage.setItem("data", JSON.stringify(data));
+        }
+
+        function getParameter() {
+
+
+            var par = decodeURIComponent(location.hash);
+
+
+            return par;
+
+        }
+
+
+
+        var checkbox = document.querySelector('.checkbox');
+        checkbox.onchange = function() {
+                makeArr();
+                clearTable();
+                changeTable();
+            }
+            // function makeArr(arr, checkboxs) {
+            //     for (var i = 1; i < checkboxs.length; i++) {
+            //         if (checkboxs[i].checked) {
+            //             arr.push(checkboxs[i].value);
+            //         }
+            //     }
+            // }
+
+
+
+
+        // region_radio_wrapper.onchange = function(e) {
+
+        //     var checkboxs = this.querySelectorAll('input');
+        //     region_select = [];
+        //     makeArr(region_select, checkboxs);
+        //     clearTable();
+        //     changeTable();
+        // }
+        // product_radio_wrapper.onchange = function(e) {
+
+        //     var checkboxs = this.querySelectorAll('input');
+        //     product_select = [];
+        //     makeArr(product_select, checkboxs);
+        //     clearTable();
+        //     changeTable();
+        // }
+        function initTable(sourceData) {
+
+            let data = [];
+            for (let i in sourceData) {
+                data.push(sourceData[i]);
+            }
+            var arr = data;
+            for (let i in arr) {
+                var tr = document.createElement('tr');
+                tr.index = i;
+                table.appendChild(tr);
+                for (let j in arr[i]) {
+                    if (j != 'sale') {
+                        var td = document.createElement('td');
+                        td.innerHTML = arr[i][j];
+                        tr.appendChild(td);
+                    } else {
+                        for (let k in arr[i][j]) {
+                            var td = document.createElement('td');
+                            td.y = k;
+                            td.x = i;
+                            td.innerHTML = arr[i][j][k];
+                            tr.appendChild(td);
+                        }
+                    }
+                }
+
+            }
+        }
+
+
+        //获取表格数据
+
+        function generateCheckbox(div, arr) {
+            for (let i in arr) {
+                var checkbox = document.createElement('input');
+                var container = document.createElement('label');
+                var text = document.createTextNode(arr[i]);
+                checkbox.type = 'checkbox';
+                checkbox.value = arr[i];
+                if (arr[i] == '全选') {
+                    checkbox.checkboxType = 'all';
+                } else {
+                    checkbox.checkboxType = 'ds';
+                }
+                container.appendChild(checkbox);
+                container.appendChild(text);
+                div.appendChild(container);
+            }
+            div.onclick = function(e) {
+                if (e.target.type == "checkbox") {
+                    if (e.target.checkboxType == 'all') {
+                        allSelect(div);
+                    } else {
+                        singleSelect(div);
+                        if (e.target.checked)
+                            CheckHash(e.target);
+                        else
+                            CancelCheckHash(e.target);
+                    }
+                }
+            }
+        }
+
+
+
+
+        function CancelCheckHash(cb) {
+            let str = decodeURIComponent(location.search.slice(1));
+
+            let arr = str.split('&');
+            for (let i = 0; i < arr.length; i++) {
+                if (arr[i] == cb.value) {
+                    arr.splice(i, 1);
+                }
+            }
+            console.log(arr);
+
+            history.pushState(null, null, '?' + arr.join('&'));
+        }
+
+
+        function CheckHash(cb) {
+
+            let str = decodeURIComponent(location.search.slice(1));
+            if (str.indexOf(cb.value) == -1) {
+                str += "&" + cb.value;
+
+
+                history.pushState(null, null, '?' + str);
+            }
+
+        }
+
+
+
+
+        function allSelect(div) {
+            var checkboxs = div.querySelectorAll('input');
+            for (var i = 1; i < checkboxs.length; i++) {
+                checkboxs[i].checked = checkboxs[0].checked;
+                if (checkboxs[i].checked)
+                    CheckHash(checkboxs[i]);
+                else
+                    CancelCheckHash(checkboxs[i])
+            }
+
+        }
+
+        function singleSelect(obj) {
+
+            var flag = true;
+            var checkboxs = obj.querySelectorAll('input');
+            for (var i = 1; i < checkboxs.length; i++) {
+                if (!checkboxs[i].checked) {
+                    flag = false;
+
+                }
+                checkboxs[0].checked = flag;
+            }
+        }
+
+        function clearTable() {
+            for (let i = table.children.length - 1; i > 0; i--) { //要倒着遍历，否则会修改table的下标
+                table.removeChild(table.children[i])
+            }
+        }
+
+
+        function sortArrByProduct(arr) {
+            arr.sort((a, b) => a.value.product.localeCompare(b.value.product, 'zh-CN'));
+        }
+
+        function sortArrByRegion(arr) {
+            arr.sort((a, b) => a.value.region.localeCompare(b.value.region, 'zh-CN'));
+        }
+
+        function clearRowSpan(arr) {
+            for (var i = 0; i < arr.length; i++) {
+                arr[i].rowspan = 1;
+            }
+        }
+
+        var currentData;
+
+
+
+        function table1(arr) {
+
+            for (var i = 0; i < arr.length; i++) {
+
+                var tr = document.createElement('tr');
+                tr.index = i;
+                table.appendChild(tr);
+                var ele = arr[i].value;
+                for (let j in ele) {
+                    if (j == 'product') {
+                        var td = document.createElement('td');
+                        td.innerHTML = ele['region'];
+                        tr.appendChild(td);
+                    } else if (j == 'region') {
+                        var td = document.createElement('td');
+                        td.innerHTML = ele['product'];
+                        tr.appendChild(td);
+
+                    } else {
+                        for (let k in ele[j]) {
+                            var td = document.createElement('td');
+                            td.y = k;
+                            td.x = arr[i].index;
+                            td.innerHTML = ele[j][k];
+                            tr.appendChild(td);
+                        }
+                    }
+                }
+
+            }
+        }
+
+        function table2(arr) {
+            for (var i = 0; i < arr.length; i++) {
+                var ele = arr[i].value;
+                var tr = document.createElement('tr');
+                tr.index = i;
+                table.appendChild(tr);
+                for (let j in ele) {
+                    if (j != 'sale') {
+                        var td = document.createElement('td');
+                        td.innerHTML = ele[j];
+                        tr.appendChild(td);
+                    } else {
+                        for (let k in ele[j]) {
+                            var td = document.createElement('td');
+                            td.y = k;
+                            td.x = arr[i].index;
+                            td.innerHTML = ele[j][k];
+                            tr.appendChild(td);
+                        }
+                    }
+                }
+            }
+        }
+
+        function marge() {
+            for (var i = 1; i < table.rows.length;) {
+                var j = i + 1;
+                while (j < table.rows.length && table.rows[i].cells[0].innerHTML == table.rows[j].cells[0].innerHTML) {
+                    table.rows[i].cells[0].rowSpan++;
+                    table.rows[j].removeChild(table.rows[j].cells[0]);
+                    j++;
+                }
+                i = j;
+            }
+        }
+    </script>
+</body>
+
+</html>
